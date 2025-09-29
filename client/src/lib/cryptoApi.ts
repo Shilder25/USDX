@@ -105,7 +105,27 @@ export async function getCryptoPrice(cryptoId: string = 'solana'): Promise<Crypt
     );
     
     if (!response.ok) {
-      throw new Error('Failed to fetch price data');
+      let errorMessage = 'Failed to fetch price data';
+      try {
+        const errorData = await response.json();
+        if (errorData.error) {
+          errorMessage = `${errorMessage}: ${errorData.error}`;
+          if (errorData.details) {
+            errorMessage += ` - ${errorData.details}`;
+          }
+        }
+      } catch (parseError) {
+        // If we can't parse the error response, try to get raw text
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = `${errorMessage}: ${errorText}`;
+          }
+        } catch (textError) {
+          errorMessage = `${errorMessage} (Status: ${response.status})`;
+        }
+      }
+      throw new Error(errorMessage);
     }
     
     const data = await response.json();
@@ -163,7 +183,27 @@ export async function getCryptoRealTimeCandles(cryptoId: string = 'solana', inte
     );
     
     if (!response.ok) {
-      throw new Error('Failed to fetch minute candlestick data');
+      let errorMessage = 'Failed to fetch minute candlestick data';
+      try {
+        const errorData = await response.json();
+        if (errorData.error) {
+          errorMessage = `${errorMessage}: ${errorData.error}`;
+          if (errorData.details) {
+            errorMessage += ` - ${errorData.details}`;
+          }
+        }
+      } catch (parseError) {
+        // If we can't parse the error response, try to get raw text
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = `${errorMessage}: ${errorText}`;
+          }
+        } catch (textError) {
+          errorMessage = `${errorMessage} (Status: ${response.status})`;
+        }
+      }
+      throw new Error(errorMessage);
     }
     
     const data = await response.json();

@@ -13,6 +13,17 @@ export function registerRoutes(app: Express): void {
       
       const response = await fetch(url);
       
+      // Check Content-Type header
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const errorText = await response.text();
+        console.error(`CoinGecko API returned non-JSON content (${response.status}):`, contentType, errorText);
+        return res.status(response.status || 500).json({ 
+          error: `CoinGecko API returned non-JSON content: ${contentType}`,
+          details: errorText
+        });
+      }
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`CoinGecko API error (${response.status}):`, errorText);
@@ -38,6 +49,17 @@ export function registerRoutes(app: Express): void {
       const url = `https://api.binance.com/api/v3/${path}${queryString ? `?${queryString}` : ''}`;
       
       const response = await fetch(url);
+      
+      // Check Content-Type header
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const errorText = await response.text();
+        console.error(`Binance API returned non-JSON content (${response.status}):`, contentType, errorText);
+        return res.status(response.status || 500).json({ 
+          error: `Binance API returned non-JSON content: ${contentType}`,
+          details: errorText
+        });
+      }
       
       if (!response.ok) {
         const errorText = await response.text();
