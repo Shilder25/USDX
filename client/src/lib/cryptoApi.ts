@@ -83,7 +83,6 @@ export async function getCryptoPrice(cryptoId: string = 'solana'): Promise<Crypt
     };
     
     return fallbackData[cryptoId] || fallbackData['solana'];
-  }
 }
 
 // Get minute-level data from Binance API

@@ -191,7 +191,6 @@ export default function CryptoCandlestickChart({ onCryptoChange }: CryptoCandles
         datasets: [{
           label: `${selectedCryptoInfo?.symbol}/USD`,
           data: chartData,
-          borderColor: isUpTrend ? '#00ff88' : '#ff0044',
           backgroundColor: 'rgba(0, 212, 255, 0.1)',
           borderWidth: 1,
           color: {
