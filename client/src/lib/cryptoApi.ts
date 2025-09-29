@@ -160,16 +160,6 @@ function generateFallbackMinuteCandles(cryptoId: string = 'solana', interval: st
   return candles;
 }
 
-    return {
-      current_price: 156.78,
-      price_change_24h: -1.23,
-      price_change_percentage_24h: -0.89,
-      total_volume: 2100000000,
-      market_cap: 73000000000,
-    };
-  }
-}
-
 export async function getCryptoCandles(cryptoId: string = 'solana', days: number = 7): Promise<CandlestickData[]> {
   try {
     // For minute/hour data, use Binance API
