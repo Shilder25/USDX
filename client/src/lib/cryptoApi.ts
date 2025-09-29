@@ -124,19 +124,19 @@ export async function getCryptoPrice(cryptoId: string = 'solana'): Promise<Crypt
     // Fallback data
     const fallbackData: Record<string, CryptoPrice> = {
       'bitcoin': {
-        current_price: 94234.56,
-        price_change_24h: 2567.89,
-        price_change_percentage_24h: 2.8,
-        total_volume: 32500000000,
-        market_cap: 1850000000000,
+        current_price: 42150.75,
+        price_change_24h: -1250.30,
+        price_change_percentage_24h: -2.88,
+        total_volume: 18500000000,
+        market_cap: 825000000000,
         symbol: 'BTC',
       },
       'solana': {
-        current_price: 198.45,
-        price_change_24h: 8.67,
-        price_change_percentage_24h: 4.56,
-        total_volume: 3200000000,
-        market_cap: 94000000000,
+        current_price: 98.32,
+        price_change_24h: 2.15,
+        price_change_percentage_24h: 2.23,
+        total_volume: 1850000000,
+        market_cap: 43500000000,
         symbol: 'SOL',
       },
     };
@@ -181,8 +181,8 @@ function generateFallbackRealTimeCandles(cryptoId: string = 'solana', interval: 
   const candles: CandlestickData[] = [];
   
   const basePrices: Record<string, number> = {
-    bitcoin: 94234.56,
-    solana: 198.45,
+    bitcoin: 42150.75,
+    solana: 98.32,
   };
   
   let price = basePrices[cryptoId] || 156.78;
@@ -276,11 +276,11 @@ function generateFallbackCandles(cryptoId: string = 'solana'): CandlestickData[]
   
   // Different base prices for different cryptos
   const basePrices: Record<string, number> = {
-    bitcoin: 94234.56,
-    solana: 198.45,
+    bitcoin: 42150.75,
+    solana: 98.32,
   };
   
-  let price = basePrices[cryptoId] || 198.45;
+  let price = basePrices[cryptoId] || 98.32;
   const now = Date.now();
   const interval = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -352,14 +352,14 @@ export async function getLiveMarketData(): Promise<LiveMarketData[]> {
     return [
       {
         symbol: 'BTC/USD',
-        price: '$94,234.56',
-        change: '+2.8%',
-        trend: 'up',
+        price: '$42,150.75',
+        change: '-2.88%',
+        trend: 'down',
       },
       {
         symbol: 'SOL/USD',
-        price: '$198.45',
-        change: '+4.56%',
+        price: '$98.32',
+        change: '+2.23%',
         trend: 'up',
       }
     ];

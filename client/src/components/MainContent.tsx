@@ -84,13 +84,13 @@ export default function MainContent() {
               ${isLoading ? '...' : priceData?.current_price.toLocaleString('en-US', { 
                 minimumFractionDigits: 2,
                 maximumFractionDigits: selectedCrypto === 'bitcoin' ? 2 : 4
-              }) || (selectedCrypto === 'bitcoin' ? '67,234.56' : '156.78')}
+              }) || (selectedCrypto === 'bitcoin' ? '42,150.75' : '98.32')}
             </div>
             <div className="text-sm font-mono text-muted-foreground">{cryptoSymbol}/USD</div>
           </Card>
           <Card className="p-4 text-center cyber-border">
             <div className={`text-2xl font-cyber ${(priceData?.price_change_percentage_24h || 0) >= 0 ? 'text-cyber-success' : 'text-cyber-danger'}`}>
-              {isLoading ? '...' : `${(priceData?.price_change_percentage_24h || 0) >= 0 ? '+' : ''}${(priceData?.price_change_percentage_24h || (selectedCrypto === 'bitcoin' ? 2.34 : -0.89)).toFixed(2)}%`}
+              {isLoading ? '...' : `${(priceData?.price_change_percentage_24h || 0) >= 0 ? '+' : ''}${(priceData?.price_change_percentage_24h || (selectedCrypto === 'bitcoin' ? -2.88 : 2.23)).toFixed(2)}%`}
             </div>
             <div className="text-sm font-mono text-muted-foreground">24h Change</div>
           </Card>
@@ -98,7 +98,7 @@ export default function MainContent() {
             <div className="text-2xl font-cyber text-cyber-gold">
               ${isLoading ? '...' : (priceData?.total_volume ? 
                 (priceData.total_volume / 1000000000).toFixed(1) + 'B' : 
-                (selectedCrypto === 'bitcoin' ? '28.5B' : '2.1B'))}
+                (selectedCrypto === 'bitcoin' ? '18.5B' : '1.9B'))}
             </div>
             <div className="text-sm font-mono text-muted-foreground">Volume</div>
           </Card>
