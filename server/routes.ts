@@ -12,29 +12,38 @@ export function registerRoutes(app: Express): void {
       const url = `https://api.coingecko.com/api/v3/${path}${queryString ? `?${queryString}` : ''}`;
       
       const response = await fetch(url);
+      const responseText = await response.text();
       
       // Check Content-Type header
       const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const errorText = await response.text();
-        console.error(`CoinGecko API returned non-JSON content (${response.status}):`, contentType, errorText);
+      
+      if (!response.ok) {
+        console.error(`CoinGecko API error (${response.status}):`, responseText);
         return res.status(response.status || 500).json({ 
-          error: `CoinGecko API returned non-JSON content: ${contentType}`,
-          details: errorText
+          error: `CoinGecko API error: ${response.status} ${response.statusText}`,
+          details: responseText
         });
       }
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`CoinGecko API error (${response.status}):`, errorText);
-        return res.status(response.status).json({ 
-          error: `CoinGecko API error: ${response.status} ${response.statusText}`,
-          details: errorText
+      // Try to parse as JSON
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const data = JSON.parse(responseText);
+          res.json(data);
+        } catch (parseError) {
+          console.error('Failed to parse CoinGecko JSON response:', parseError);
+          return res.status(500).json({ 
+            error: 'Failed to parse JSON response from CoinGecko',
+            details: responseText
+          });
+        }
+      } else {
+        console.error(`CoinGecko API returned non-JSON content (${response.status}):`, contentType, responseText);
+        return res.status(response.status || 500).json({ 
+          error: `CoinGecko API returned non-JSON content: ${contentType}`,
+          details: responseText
         });
       }
-
-      const data = await response.json();
-      res.json(data);
     } catch (error) {
       console.error('CoinGecko proxy error:', error);
       res.status(500).json({ error: 'Failed to fetch from CoinGecko' });
@@ -49,29 +58,38 @@ export function registerRoutes(app: Express): void {
       const url = `https://api.binance.com/api/v3/${path}${queryString ? `?${queryString}` : ''}`;
       
       const response = await fetch(url);
+      const responseText = await response.text();
       
       // Check Content-Type header
       const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const errorText = await response.text();
-        console.error(`Binance API returned non-JSON content (${response.status}):`, contentType, errorText);
+      
+      if (!response.ok) {
+        console.error(`Binance API error (${response.status}):`, responseText);
         return res.status(response.status || 500).json({ 
-          error: `Binance API returned non-JSON content: ${contentType}`,
-          details: errorText
+          error: `Binance API error: ${response.status} ${response.statusText}`,
+          details: responseText
         });
       }
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Binance API error (${response.status}):`, errorText);
-        return res.status(response.status).json({ 
-          error: `Binance API error: ${response.status} ${response.statusText}`,
-          details: errorText
+      // Try to parse as JSON
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const data = JSON.parse(responseText);
+          res.json(data);
+        } catch (parseError) {
+          console.error('Failed to parse Binance JSON response:', parseError);
+          return res.status(500).json({ 
+            error: 'Failed to parse JSON response from Binance',
+            details: responseText
+          });
+        }
+      } else {
+        console.error(`Binance API returned non-JSON content (${response.status}):`, contentType, responseText);
+        return res.status(response.status || 500).json({ 
+          error: `Binance API returned non-JSON content: ${contentType}`,
+          details: responseText
         });
       }
-
-      const data = await response.json();
-      res.json(data);
     } catch (error) {
       console.error('Binance proxy error:', error);
       res.status(500).json({ error: 'Failed to fetch from Binance' });
