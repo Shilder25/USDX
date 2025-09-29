@@ -21,7 +21,7 @@ export default function MainContent() {
   const { data: priceData, isLoading } = useQuery({
     queryKey: ['crypto-price', selectedCrypto],
     queryFn: () => getCryptoPrice(selectedCrypto),
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
   });
 
   // Fetch real market sentiment

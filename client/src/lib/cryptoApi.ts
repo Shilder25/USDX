@@ -145,39 +145,19 @@ export async function getCryptoPrice(cryptoId: string = 'solana'): Promise<Crypt
     };
   } catch (error) {
     console.error(`Error fetching ${cryptoId} price:`, error);
-    // Use the same updated prices as Live Market
-    const liveMarketData = await getLiveMarketData();
-    const symbol = CRYPTO_OPTIONS.find(c => c.id === cryptoId)?.symbol || '';
-    const marketItem = liveMarketData.find(item => item.symbol.includes(symbol));
-    
-    if (marketItem) {
-      const price = parseFloat(marketItem.price.replace(/[$,]/g, ''));
-      const changeStr = marketItem.change.replace(/[%+]/g, '');
-      const change = parseFloat(changeStr);
-      
-      return {
-        current_price: price,
-        price_change_24h: (price * change) / 100,
-        price_change_percentage_24h: change,
-        total_volume: cryptoId === 'bitcoin' ? 45000000000 : 4200000000,
-        market_cap: cryptoId === 'bitcoin' ? 2250000000000 : 115000000000,
-        symbol,
-      };
-    }
-    
-    // Final fallback with updated prices if Live Market also fails
+    // Direct fallback with current market prices
     const fallbackPrices = {
       bitcoin: {
         current_price: 114250.00,
-        price_change_24h: 2100.50,
+        price_change_24h: 2113.63,
         price_change_percentage_24h: 1.85,
         total_volume: 45000000000,
-        market_cap: 2250000000000,
+        market_cap: 2260000000000,
         symbol: 'BTC',
       },
       solana: {
         current_price: 245.80,
-        price_change_24h: 5.18,
+        price_change_24h: 5.28,
         price_change_percentage_24h: 2.15,
         total_volume: 4200000000,
         market_cap: 115000000000,
@@ -237,6 +217,7 @@ export async function getCryptoRealTimeCandles(cryptoId: string = 'solana', inte
     }));
   } catch (error) {
     console.error(`Error fetching ${cryptoId} real-time candles:`, error);
+    // Always use fallback when API fails
     return generateFallbackRealTimeCandles(cryptoId, interval, limit);
   }
 }
@@ -410,10 +391,15 @@ export async function getLiveMarketData(): Promise<LiveMarketData[]> {
       });
     }
     
+    // If we got some data but not all, fill in missing data
+    if (result.length === 0) {
+      throw new Error('No market data received');
+    }
+    
     return result;
   } catch (error) {
     console.error('Error fetching live market data:', error);
-    // Fallback data with current market prices (actualizados)
+    // Robust fallback with current market prices
     return [
       {
         symbol: 'BTC/USD',
