@@ -12,8 +12,17 @@ export function registerRoutes(app: Express): void {
       const url = `https://api.coingecko.com/api/v3/${path}${queryString ? `?${queryString}` : ''}`;
       
       const response = await fetch(url);
-      const data = await response.json();
       
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`CoinGecko API error (${response.status}):`, errorText);
+        return res.status(response.status).json({ 
+          error: `CoinGecko API error: ${response.status} ${response.statusText}`,
+          details: errorText
+        });
+      }
+
+      const data = await response.json();
       res.json(data);
     } catch (error) {
       console.error('CoinGecko proxy error:', error);
@@ -29,12 +38,21 @@ export function registerRoutes(app: Express): void {
       const url = `https://api.binance.com/api/v3/${path}${queryString ? `?${queryString}` : ''}`;
       
       const response = await fetch(url);
-      const data = await response.json();
       
-      res.json(data);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Binance API error (${response.status}):`, errorText);
+        return res.status(response.status).json({ 
+          error: `Binance API error: ${response.status} ${response.statusText}`,
+          details: errorText
+        });
+      }
     } catch (error) {
       console.error('Binance proxy error:', error);
       res.status(500).json({ error: 'Failed to fetch from Binance' });
     }
   });
 }
+
+      const data = await response.json();
+      res.json(data);
