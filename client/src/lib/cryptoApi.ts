@@ -1,6 +1,6 @@
 // Crypto API service using CoinGecko (free API)
-const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
-const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
+const COINGECKO_BASE_URL = '/api/proxy/coingecko';
+const BINANCE_BASE_URL = '/api/proxy/binance';
 
 // Available cryptocurrencies
 export const CRYPTO_OPTIONS = [
