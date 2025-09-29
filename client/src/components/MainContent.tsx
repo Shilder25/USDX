@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getSolanaPrice } from "@/lib/cryptoApi";
-import SolanaCandlestickChart from "./SolanaCandlestickChart";
+import { getCryptoPrice } from "@/lib/cryptoApi";
+import CryptoCandlestickChart from "./SolanaCandlestickChart";
 
 export default function MainContent() {
   const [sentiment, setSentiment] = useState(75);
@@ -17,10 +17,10 @@ export default function MainContent() {
   ]);
   const [newsIndex, setNewsIndex] = useState(0);
 
-  // Fetch real Solana price data
+  // Fetch real crypto price data (default to Solana for now)
   const { data: priceData, isLoading } = useQuery({
-    queryKey: ['solana-price'],
-    queryFn: getSolanaPrice,
+    queryKey: ['crypto-price', 'solana'],
+    queryFn: () => getCryptoPrice('solana'),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -52,8 +52,8 @@ export default function MainContent() {
           <Badge className="pulse-glow">LIVE</Badge>
         </div>
         
-        {/* Real Solana Candlestick Chart */}
-        <SolanaCandlestickChart />
+        {/* Real Crypto Candlestick Chart */}
+        <CryptoCandlestickChart />
 
         {/* Price Display */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
