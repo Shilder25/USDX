@@ -1,6 +1,7 @@
 // Crypto API service using CoinGecko (free API)
 const COINGECKO_BASE_URL = '/api/proxy/coingecko';
 const BINANCE_BASE_URL = '/api/proxy/binance';
+const WEBSOCKET_URL = 'wss://stream.binance.com:9443/ws/';
 
 // Available cryptocurrencies
 export const CRYPTO_OPTIONS = [
@@ -12,6 +13,12 @@ export const CRYPTO_OPTIONS = [
 const BINANCE_SYMBOLS: Record<string, string> = {
   'bitcoin': 'BTCUSDT',
   'solana': 'SOLUSDT',
+};
+
+// WebSocket streams for real-time data
+const BINANCE_STREAMS: Record<string, string> = {
+  'bitcoin': 'btcusdt@ticker',
+  'solana': 'solusdt@ticker',
 };
 
 export interface CandlestickData {
@@ -37,6 +44,58 @@ export interface LiveMarketData {
   price: string;
   change: string;
   trend: 'up' | 'down';
+}
+
+export interface MarketSentiment {
+  bullish: number;
+  bearish: number;
+  confidence: number;
+  trend: 'bullish' | 'bearish' | 'neutral';
+}
+
+// Real-time price WebSocket connection
+let wsConnection: WebSocket | null = null;
+let priceCallbacks: ((data: any) => void)[] = [];
+
+export function subscribeToRealTimePrice(callback: (data: any) => void) {
+  priceCallbacks.push(callback);
+  
+  if (!wsConnection) {
+    const streams = Object.values(BINANCE_STREAMS).join('/');
+    wsConnection = new WebSocket(`${WEBSOCKET_URL}${streams}`);
+    
+    wsConnection.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        priceCallbacks.forEach(cb => cb(data));
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    };
+    
+    wsConnection.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    wsConnection.onclose = () => {
+      wsConnection = null;
+      // Reconnect after 5 seconds
+      setTimeout(() => {
+        if (priceCallbacks.length > 0) {
+          subscribeToRealTimePrice(priceCallbacks[0]);
+        }
+      }, 5000);
+    };
+  }
+}
+
+export function unsubscribeFromRealTimePrice(callback: (data: any) => void) {
+  priceCallbacks = priceCallbacks.filter(cb => cb !== callback);
+  
+  if (priceCallbacks.length === 0 && wsConnection) {
+    wsConnection.close();
+    wsConnection = null;
+  }
 }
 
 export async function getCryptoPrice(cryptoId: string = 'solana'): Promise<CryptoPrice> {
@@ -65,19 +124,19 @@ export async function getCryptoPrice(cryptoId: string = 'solana'): Promise<Crypt
     // Fallback data
     const fallbackData: Record<string, CryptoPrice> = {
       'bitcoin': {
-        current_price: 67234.56,
-        price_change_24h: 1567.89,
-        price_change_percentage_24h: 2.34,
-        total_volume: 28500000000,
-        market_cap: 1320000000000,
+        current_price: 94234.56,
+        price_change_24h: 2567.89,
+        price_change_percentage_24h: 2.8,
+        total_volume: 32500000000,
+        market_cap: 1850000000000,
         symbol: 'BTC',
       },
       'solana': {
-        current_price: 156.78,
-        price_change_24h: -1.23,
-        price_change_percentage_24h: -0.89,
-        total_volume: 2100000000,
-        market_cap: 73000000000,
+        current_price: 198.45,
+        price_change_24h: 8.67,
+        price_change_percentage_24h: 4.56,
+        total_volume: 3200000000,
+        market_cap: 94000000000,
         symbol: 'SOL',
       },
     };
@@ -86,12 +145,12 @@ export async function getCryptoPrice(cryptoId: string = 'solana'): Promise<Crypt
   }
 }
 
-// Get minute-level data from Binance API
-export async function getCryptoMinuteCandles(cryptoId: string = 'solana', interval: string = '1m', limit: number = 100): Promise<CandlestickData[]> {
+// Get real-time data from Binance API (seconds, minutes, hours)
+export async function getCryptoRealTimeCandles(cryptoId: string = 'solana', interval: string = '1m', limit: number = 100): Promise<CandlestickData[]> {
   try {
     const symbol = BINANCE_SYMBOLS[cryptoId];
     if (!symbol) {
-      throw new Error(`Symbol not supported for minute data: ${cryptoId}`);
+      throw new Error(`Symbol not supported for real-time data: ${cryptoId}`);
     }
 
     const response = await fetch(
@@ -113,31 +172,34 @@ export async function getCryptoMinuteCandles(cryptoId: string = 'solana', interv
       volume: parseFloat(candle[5]),
     }));
   } catch (error) {
-    console.error(`Error fetching ${cryptoId} minute candles:`, error);
-    return generateFallbackMinuteCandles(cryptoId, interval, limit);
+    console.error(`Error fetching ${cryptoId} real-time candles:`, error);
+    return generateFallbackRealTimeCandles(cryptoId, interval, limit);
   }
 }
 
-function generateFallbackMinuteCandles(cryptoId: string = 'solana', interval: string = '1m', limit: number = 100): CandlestickData[] {
+function generateFallbackRealTimeCandles(cryptoId: string = 'solana', interval: string = '1m', limit: number = 100): CandlestickData[] {
   const candles: CandlestickData[] = [];
   
   const basePrices: Record<string, number> = {
-    bitcoin: 67234.56,
-    solana: 156.78,
+    bitcoin: 94234.56,
+    solana: 198.45,
   };
   
   let price = basePrices[cryptoId] || 156.78;
   const now = Date.now();
   
-  // Convert interval to milliseconds
-  const intervalMs = interval === '1m' ? 60000 : 
+  // Convert interval to milliseconds (including seconds)
+  const intervalMs = interval === '1s' ? 1000 :
+                    interval === '5s' ? 5000 :
+                    interval === '1m' ? 60000 : 
                     interval === '5m' ? 300000 : 
                     interval === '15m' ? 900000 : 
-                    interval === '1h' ? 3600000 : 60000;
+                    interval === '1h' ? 3600000 : 1000;
 
   for (let i = limit; i >= 0; i--) {
     const timestamp = now - (i * intervalMs);
-    const volatility = 0.001; // 0.1% volatility for minute data
+    // Higher volatility for shorter timeframes
+    const volatility = interval.includes('s') ? 0.0005 : 0.001;
     
     const open = price;
     const change = (Math.random() - 0.5) * 2 * volatility * price;
@@ -162,19 +224,26 @@ function generateFallbackMinuteCandles(cryptoId: string = 'solana', interval: st
 
 export async function getCryptoCandles(cryptoId: string = 'solana', days: number = 7): Promise<CandlestickData[]> {
   try {
-    // For minute/hour data, use Binance API
+    // For seconds/minute/hour data, use Binance API
     if (days < 1) {
       const hours = days * 24;
       const minutes = hours * 60;
+      const seconds = minutes * 60;
       
-      if (minutes <= 60) {
-        return getCryptoMinuteCandles(cryptoId, '1m', Math.min(minutes, 100));
+      if (seconds <= 300) { // 5 minutes or less
+        if (seconds <= 60) {
+          return getCryptoRealTimeCandles(cryptoId, '1s', Math.min(seconds, 60));
+        } else {
+          return getCryptoRealTimeCandles(cryptoId, '5s', Math.min(Math.floor(seconds / 5), 60));
+        }
+      } else if (minutes <= 60) {
+        return getCryptoRealTimeCandles(cryptoId, '1m', Math.min(minutes, 100));
       } else if (minutes <= 300) {
-        return getCryptoMinuteCandles(cryptoId, '5m', Math.min(Math.floor(minutes / 5), 100));
+        return getCryptoRealTimeCandles(cryptoId, '5m', Math.min(Math.floor(minutes / 5), 100));
       } else if (minutes <= 900) {
-        return getCryptoMinuteCandles(cryptoId, '15m', Math.min(Math.floor(minutes / 15), 100));
+        return getCryptoRealTimeCandles(cryptoId, '15m', Math.min(Math.floor(minutes / 15), 100));
       } else {
-        return getCryptoMinuteCandles(cryptoId, '1h', Math.min(Math.floor(hours), 100));
+        return getCryptoRealTimeCandles(cryptoId, '1h', Math.min(Math.floor(hours), 100));
       }
     }
 
@@ -207,11 +276,11 @@ function generateFallbackCandles(cryptoId: string = 'solana'): CandlestickData[]
   
   // Different base prices for different cryptos
   const basePrices: Record<string, number> = {
-    bitcoin: 67234.56,
-    solana: 156.78,
+    bitcoin: 94234.56,
+    solana: 198.45,
   };
   
-  let price = basePrices[cryptoId] || 156.78;
+  let price = basePrices[cryptoId] || 198.45;
   const now = Date.now();
   const interval = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -283,15 +352,15 @@ export async function getLiveMarketData(): Promise<LiveMarketData[]> {
     return [
       {
         symbol: 'BTC/USD',
-        price: '$67,234.56',
-        change: '+2.34%',
+        price: '$94,234.56',
+        change: '+2.8%',
         trend: 'up',
       },
       {
         symbol: 'SOL/USD',
-        price: '$156.78',
-        change: '-0.89%',
-        trend: 'down',
+        price: '$198.45',
+        change: '+4.56%',
+        trend: 'up',
       }
     ];
   }
@@ -330,5 +399,58 @@ export async function getMultipleCryptoPrices(cryptoIds: string[]): Promise<Reco
   } catch (error) {
     console.error('Error fetching multiple crypto prices:', error);
     return {};
+  }
+}
+
+// Calculate market sentiment based on price movements and volume
+export async function getMarketSentiment(cryptoIds: string[] = ['bitcoin', 'solana']): Promise<MarketSentiment> {
+  try {
+    const prices = await getMultipleCryptoPrices(cryptoIds);
+    
+    let bullishCount = 0;
+    let bearishCount = 0;
+    let totalVolume = 0;
+    let weightedSentiment = 0;
+    
+    for (const [cryptoId, priceData] of Object.entries(prices)) {
+      const change = priceData.price_change_percentage_24h;
+      const volume = priceData.total_volume;
+      
+      totalVolume += volume;
+      
+      if (change > 0) {
+        bullishCount++;
+        weightedSentiment += change * volume;
+      } else {
+        bearishCount++;
+        weightedSentiment += change * volume;
+      }
+    }
+    
+    const avgSentiment = totalVolume > 0 ? weightedSentiment / totalVolume : 0;
+    const bullishPercentage = cryptoIds.length > 0 ? (bullishCount / cryptoIds.length) * 100 : 50;
+    
+    // Calculate confidence based on volume and price movements
+    const confidence = Math.min(95, Math.max(60, 70 + Math.abs(avgSentiment) * 10));
+    
+    let trend: 'bullish' | 'bearish' | 'neutral' = 'neutral';
+    if (bullishPercentage > 60) trend = 'bullish';
+    else if (bullishPercentage < 40) trend = 'bearish';
+    
+    return {
+      bullish: Math.round(bullishPercentage),
+      bearish: Math.round(100 - bullishPercentage),
+      confidence: Math.round(confidence),
+      trend,
+    };
+  } catch (error) {
+    console.error('Error calculating market sentiment:', error);
+    // Fallback sentiment based on current market conditions
+    return {
+      bullish: 78,
+      bearish: 22,
+      confidence: 85,
+      trend: 'bullish',
+    };
   }
 }

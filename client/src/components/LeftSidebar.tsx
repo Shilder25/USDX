@@ -26,7 +26,7 @@ export default function LeftSidebar() {
   const { data: marketTickers, isLoading: marketLoading } = useQuery({
     queryKey: ['live-market-data'],
     queryFn: getLiveMarketData,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 5000, // Refresh every 5 seconds for more real-time data
   });
 
   const handleNavClick = (navId: string) => {

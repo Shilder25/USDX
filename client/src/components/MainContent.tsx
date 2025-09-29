@@ -5,11 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getCryptoPrice } from "@/lib/cryptoApi";
+import { getCryptoPrice, getMarketSentiment, type MarketSentiment } from "@/lib/cryptoApi";
 import CryptoCandlestickChart from "./SolanaCandlestickChart";
 
 export default function MainContent() {
-  const [sentiment, setSentiment] = useState(75);
   const [selectedCrypto, setSelectedCrypto] = useState('bitcoin'); // Track selected crypto from chart
   const [news, setNews] = useState([
     { id: 1, text: "Bitcoin showing strong institutional adoption...", time: "12:34", type: "bullish" },
@@ -23,6 +22,13 @@ export default function MainContent() {
     queryKey: ['crypto-price', selectedCrypto],
     queryFn: () => getCryptoPrice(selectedCrypto),
     refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Fetch real market sentiment
+  const { data: sentimentData } = useQuery({
+    queryKey: ['market-sentiment'],
+    queryFn: () => getMarketSentiment(['bitcoin', 'solana']),
+    refetchInterval: 60000, // Refresh every minute
   });
 
   // Listen for crypto selection changes from the chart component
@@ -124,17 +130,43 @@ export default function MainContent() {
       {/* Market Sentiment */}
       <Card className="p-6 cyber-border">
         <h2 className="text-xl font-cyber cyber-glow mb-4">MARKET SENTIMENT</h2>
-        <div className="flex items-center space-x-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {sentimentData?.trend === 'bullish' ? (
+                <TrendingUp className="w-5 h-5 text-cyber-success" />
+              ) : sentimentData?.trend === 'bearish' ? (
+                <TrendingDown className="w-5 h-5 text-cyber-danger" />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-cyber-gold" />
+              )}
+              <span className="text-sm font-mono text-muted-foreground">
+                {sentimentData?.trend?.toUpperCase() || 'NEUTRAL'}
+              </span>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-cyber cyber-glow">
+                {sentimentData?.bullish || 75}%
+              </div>
+              <div className="text-xs font-mono text-muted-foreground">BULLISH</div>
+            </div>
+          </div>
           <div className="flex-1">
             <div className="flex justify-between mb-2">
               <span className="text-sm font-mono">BULLISH</span>
               <span className="text-sm font-mono">BEARISH</span>
             </div>
-            <Progress value={sentiment} className="h-3" />
+            <Progress value={sentimentData?.bullish || 75} className="h-3" />
+            <div className="flex justify-between mt-1 text-xs font-mono text-muted-foreground">
+              <span>{sentimentData?.bullish || 75}%</span>
+              <span>{sentimentData?.bearish || 25}%</span>
+            </div>
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-cyber cyber-glow">{sentiment}%</div>
-            <div className="text-xs font-mono text-muted-foreground">CONFIDENCE</div>
+          <div className="flex items-center justify-between pt-2 border-t border-border/30">
+            <span className="text-sm font-mono text-muted-foreground">CONFIDENCE</span>
+            <div className="text-lg font-cyber text-cyber-gold">
+              {sentimentData?.confidence || 85}%
+            </div>
           </div>
         </div>
       </Card>

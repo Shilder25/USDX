@@ -47,7 +47,9 @@ export default function CryptoCandlestickChart({ onCryptoChange }: CryptoCandles
   const { data: candleData, isLoading, error, refetch } = useQuery({
     queryKey: ['crypto-candles', selectedCrypto, selectedTimeframe],
     queryFn: () => getCryptoCandles(selectedCrypto, selectedTimeframe),
-    refetchInterval: selectedTimeframe < 1 ? 30000 : 60000, // 30s for minute data, 1min for daily
+    refetchInterval: selectedTimeframe <= 0.000058 ? 1000 : // 1 second for second timeframes
+                    selectedTimeframe < 1 ? 5000 : // 5 seconds for minute timeframes
+                    30000, // 30 seconds for daily timeframes
   });
 
   const selectedCryptoInfo = CRYPTO_OPTIONS.find(crypto => crypto.id === selectedCrypto);
@@ -130,6 +132,7 @@ export default function CryptoCandlestickChart({ onCryptoChange }: CryptoCandles
             unit: selectedTimeframe < 1 ? (selectedTimeframe <= 0.25 ? 'minute' : 'hour') : 
                   selectedTimeframe <= 7 ? 'day' : 'week',
             displayFormats: {
+              second: 'HH:mm:ss',
               minute: 'HH:mm',
               hour: 'MMM dd HH:mm',
               day: 'MMM dd',
@@ -217,6 +220,8 @@ export default function CryptoCandlestickChart({ onCryptoChange }: CryptoCandles
   }, [candleData, selectedTimeframe, selectedCrypto, selectedCryptoInfo]);
 
   const timeframes = [
+    { label: '1s', days: 0.000012 }, // 1 second
+    { label: '5s', days: 0.000058 }, // 5 seconds
     { label: '15m', days: 0.25 },
     { label: '1h', days: 0.042 }, // 1 hour
     { label: '4h', days: 0.167 }, // 4 hours
