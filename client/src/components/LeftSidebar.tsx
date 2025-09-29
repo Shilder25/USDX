@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, TrendingUp, Zap, Settings, User, BarChart3 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getLiveMarketData } from "@/lib/cryptoApi";
 import cryptoMeme1 from "@assets/generated_images/Crypto_meme_placeholder_b0373b09.png";
 import cryptoMeme2 from "@assets/generated_images/Ethereum_meme_placeholder_dd48646c.png";
 
@@ -20,12 +22,12 @@ export default function LeftSidebar() {
     { id: 'settings', label: 'SETTINGS', icon: Settings },
   ];
 
-  const marketTickers = [
-    { symbol: 'BTC/USD', price: '$67,234.56', change: '+2.34%', trend: 'up' },
-    { symbol: 'ETH/USD', price: '$3,421.89', change: '+1.67%', trend: 'up' },
-    { symbol: 'SOL/USD', price: '$156.78', change: '-0.89%', trend: 'down' },
-    { symbol: 'ADA/USD', price: '$0.4567', change: '+3.45%', trend: 'up' },
-  ];
+  // Fetch real market data
+  const { data: marketTickers, isLoading: marketLoading } = useQuery({
+    queryKey: ['live-market-data'],
+    queryFn: getLiveMarketData,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
   const handleNavClick = (navId: string) => {
     setActiveNav(navId);
@@ -84,19 +86,26 @@ export default function LeftSidebar() {
       {/* Live Market Ticker */}
       <Card className="p-4 cyber-border">
         <h2 className="text-lg font-cyber cyber-glow mb-4">LIVE MARKET</h2>
-        <div className="space-y-2 text-xs font-mono">
-          {marketTickers.map((ticker, index) => (
-            <div key={index} className="flex justify-between items-center p-2 rounded bg-card/50">
-              <span className="text-foreground">{ticker.symbol}</span>
-              <div className="text-right">
-                <div className="text-foreground">{ticker.price}</div>
-                <div className={ticker.trend === 'up' ? 'text-cyber-success' : 'text-cyber-danger'}>
-                  {ticker.change}
+        {marketLoading ? (
+          <div className="space-y-2">
+            <div className="animate-pulse bg-card/30 h-12 rounded"></div>
+            <div className="animate-pulse bg-card/30 h-12 rounded"></div>
+          </div>
+        ) : (
+          <div className="space-y-2 text-xs font-mono">
+            {marketTickers?.map((ticker, index) => (
+              <div key={index} className="flex justify-between items-center p-2 rounded bg-card/50 cyber-border">
+                <span className="text-foreground font-cyber">{ticker.symbol}</span>
+                <div className="text-right">
+                  <div className="text-foreground font-mono">{ticker.price}</div>
+                  <div className={`font-mono ${ticker.trend === 'up' ? 'text-cyber-success' : 'text-cyber-danger'}`}>
+                    {ticker.change}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* Meme Corner */}

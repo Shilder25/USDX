@@ -10,19 +10,32 @@ import CryptoCandlestickChart from "./SolanaCandlestickChart";
 
 export default function MainContent() {
   const [sentiment, setSentiment] = useState(75);
+  const [selectedCrypto, setSelectedCrypto] = useState('bitcoin'); // Track selected crypto from chart
   const [news, setNews] = useState([
-    { id: 1, text: "Solana ecosystem showing strong growth...", time: "12:34", type: "bullish" },
-    { id: 2, text: "SOL breaks key resistance level at $160...", time: "12:31", type: "bullish" },
-    { id: 3, text: "New DeFi protocols launching on Solana...", time: "12:28", type: "neutral" },
+    { id: 1, text: "Bitcoin showing strong institutional adoption...", time: "12:34", type: "bullish" },
+    { id: 2, text: "BTC breaks key resistance level at $67K...", time: "12:31", type: "bullish" },
+    { id: 3, text: "Major crypto exchange adds new features...", time: "12:28", type: "neutral" },
   ]);
   const [newsIndex, setNewsIndex] = useState(0);
 
-  // Fetch real crypto price data (default to Solana for now)
+  // Fetch real crypto price data based on selected crypto
   const { data: priceData, isLoading } = useQuery({
-    queryKey: ['crypto-price', 'solana'],
-    queryFn: () => getCryptoPrice('solana'),
+    queryKey: ['crypto-price', selectedCrypto],
+    queryFn: () => getCryptoPrice(selectedCrypto),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  // Listen for crypto selection changes from the chart component
+  useEffect(() => {
+    const handleCryptoChange = (event: CustomEvent) => {
+      setSelectedCrypto(event.detail.cryptoId);
+    };
+
+    window.addEventListener('cryptoSelectionChanged', handleCryptoChange as EventListener);
+    return () => {
+      window.removeEventListener('cryptoSelectionChanged', handleCryptoChange as EventListener);
+    };
+  }, []);
 
   // Auto-scroll news
   useEffect(() => {
@@ -43,6 +56,9 @@ export default function MainContent() {
     // Add particle effect or visual feedback
   };
 
+  // Get crypto symbol for display
+  const cryptoSymbol = selectedCrypto === 'bitcoin' ? 'BTC' : 'SOL';
+
   return (
     <main className="flex-1 p-6 space-y-6 cyber-scrollbar overflow-y-auto">
       {/* Trading Chart Section */}
@@ -53,25 +69,30 @@ export default function MainContent() {
         </div>
         
         {/* Real Crypto Candlestick Chart */}
-        <CryptoCandlestickChart />
+        <CryptoCandlestickChart onCryptoChange={setSelectedCrypto} />
 
         {/* Price Display */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="p-4 text-center cyber-border">
             <div className="text-3xl font-cyber cyber-glow">
-              ${isLoading ? '...' : priceData?.current_price.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '156.78'}
+              ${isLoading ? '...' : priceData?.current_price.toLocaleString('en-US', { 
+                minimumFractionDigits: 2,
+                maximumFractionDigits: selectedCrypto === 'bitcoin' ? 2 : 4
+              }) || (selectedCrypto === 'bitcoin' ? '67,234.56' : '156.78')}
             </div>
-            <div className="text-sm font-mono text-muted-foreground">SOL/USD</div>
+            <div className="text-sm font-mono text-muted-foreground">{cryptoSymbol}/USD</div>
           </Card>
           <Card className="p-4 text-center cyber-border">
             <div className={`text-2xl font-cyber ${(priceData?.price_change_percentage_24h || 0) >= 0 ? 'text-cyber-success' : 'text-cyber-danger'}`}>
-              {isLoading ? '...' : `${(priceData?.price_change_percentage_24h || 0) >= 0 ? '+' : ''}${(priceData?.price_change_percentage_24h || -0.89).toFixed(2)}%`}
+              {isLoading ? '...' : `${(priceData?.price_change_percentage_24h || 0) >= 0 ? '+' : ''}${(priceData?.price_change_percentage_24h || (selectedCrypto === 'bitcoin' ? 2.34 : -0.89)).toFixed(2)}%`}
             </div>
             <div className="text-sm font-mono text-muted-foreground">24h Change</div>
           </Card>
           <Card className="p-4 text-center cyber-border">
             <div className="text-2xl font-cyber text-cyber-gold">
-              ${isLoading ? '...' : (priceData?.total_volume ? (priceData.total_volume / 1000000000).toFixed(1) + 'B' : '2.1B')}
+              ${isLoading ? '...' : (priceData?.total_volume ? 
+                (priceData.total_volume / 1000000000).toFixed(1) + 'B' : 
+                (selectedCrypto === 'bitcoin' ? '28.5B' : '2.1B'))}
             </div>
             <div className="text-sm font-mono text-muted-foreground">Volume</div>
           </Card>
@@ -86,7 +107,7 @@ export default function MainContent() {
             data-testid="button-buy"
           >
             <ArrowUp className="w-5 h-5 mr-2" />
-            BUY
+            BUY {cryptoSymbol}
           </Button>
           <Button 
             size="lg" 
@@ -95,7 +116,7 @@ export default function MainContent() {
             data-testid="button-sell"
           >
             <ArrowDown className="w-5 h-5 mr-2" />
-            SELL
+            SELL {cryptoSymbol}
           </Button>
         </div>
       </Card>

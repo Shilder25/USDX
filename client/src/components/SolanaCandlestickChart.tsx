@@ -28,16 +28,26 @@ ChartJS.register(
   OhlcElement
 );
 
-export default function CryptoCandlestickChart() {
+interface CryptoCandlestickChartProps {
+  onCryptoChange?: (cryptoId: string) => void;
+}
+
+export default function CryptoCandlestickChart({ onCryptoChange }: CryptoCandlestickChartProps) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<ChartJS | null>(null);
-  const [selectedCrypto, setSelectedCrypto] = useState('solana');
-  const [selectedTimeframe, setSelectedTimeframe] = useState(7);
+  const [selectedCrypto, setSelectedCrypto] = useState('bitcoin');
+  const [selectedTimeframe, setSelectedTimeframe] = useState(0.25); // 15 minutes
+
+  // Notify parent component when crypto changes
+  const handleCryptoChange = (cryptoId: string) => {
+    setSelectedCrypto(cryptoId);
+    onCryptoChange?.(cryptoId);
+  };
 
   const { data: candleData, isLoading, error, refetch } = useQuery({
     queryKey: ['crypto-candles', selectedCrypto, selectedTimeframe],
     queryFn: () => getCryptoCandles(selectedCrypto, selectedTimeframe),
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: selectedTimeframe < 1 ? 30000 : 60000, // 30s for minute data, 1min for daily
   });
 
   const selectedCryptoInfo = CRYPTO_OPTIONS.find(crypto => crypto.id === selectedCrypto);
@@ -96,6 +106,9 @@ export default function CryptoCandlestickChart() {
           callbacks: {
             title: function(context: any) {
               const date = new Date(context[0].parsed.x);
+              if (selectedTimeframe < 1) {
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              }
               return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
             },
             label: function(context: any) {
@@ -114,8 +127,10 @@ export default function CryptoCandlestickChart() {
         x: {
           type: 'time',
           time: {
-            unit: selectedTimeframe <= 1 ? 'hour' : selectedTimeframe <= 7 ? 'day' : 'week',
+            unit: selectedTimeframe < 1 ? (selectedTimeframe <= 0.25 ? 'minute' : 'hour') : 
+                  selectedTimeframe <= 7 ? 'day' : 'week',
             displayFormats: {
+              minute: 'HH:mm',
               hour: 'MMM dd HH:mm',
               day: 'MMM dd',
               week: 'MMM dd'
@@ -131,7 +146,7 @@ export default function CryptoCandlestickChart() {
               family: 'Roboto Mono',
               size: 11,
             },
-            maxTicksLimit: 8,
+            maxTicksLimit: selectedTimeframe < 1 ? 10 : 8,
           },
         },
         y: {
@@ -203,10 +218,12 @@ export default function CryptoCandlestickChart() {
   }, [candleData, selectedTimeframe, selectedCrypto, selectedCryptoInfo]);
 
   const timeframes = [
+    { label: '15m', days: 0.25 },
+    { label: '1h', days: 0.042 }, // 1 hour
+    { label: '4h', days: 0.167 }, // 4 hours
     { label: '1D', days: 1 },
     { label: '7D', days: 7 },
     { label: '30D', days: 30 },
-    { label: '90D', days: 90 },
   ];
 
   const handleRefresh = () => {
@@ -233,8 +250,8 @@ export default function CryptoCandlestickChart() {
         {/* Crypto Selector */}
         <div className="flex items-center space-x-2">
           <span className="text-sm font-mono text-muted-foreground">Asset:</span>
-          <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
-            <SelectTrigger className="w-40 cyber-border">
+          <Select value={selectedCrypto} onValueChange={handleCryptoChange}>
+            <SelectTrigger className="w-32 cyber-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -242,7 +259,6 @@ export default function CryptoCandlestickChart() {
                 <SelectItem key={crypto.id} value={crypto.id}>
                   <div className="flex items-center space-x-2">
                     <span className="font-mono">{crypto.symbol}</span>
-                    <span className="text-muted-foreground">{crypto.name}</span>
                   </div>
                 </SelectItem>
               ))}
