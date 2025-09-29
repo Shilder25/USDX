@@ -1,8 +1,7 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export function registerRoutes(app: Express): void {
   // Proxy routes for external APIs to avoid CORS issues
   
   // CoinGecko proxy routes
@@ -38,9 +37,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to fetch from Binance' });
     }
   });
-
-
-  const httpServer = createServer(app);
-
-  return httpServer;
 }
