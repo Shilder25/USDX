@@ -93,7 +93,7 @@ export default function LeftSidebar() {
           </div>
         ) : (
           <div className="space-y-2 text-xs font-mono">
-            {marketTickers?.map((ticker, index) => (
+            {marketTickers && marketTickers.length > 0 ? marketTickers.map((ticker, index) => (
               <div key={index} className="flex justify-between items-center p-2 rounded bg-card/50 cyber-border">
                 <span className="text-foreground font-cyber">{ticker.symbol}</span>
                 <div className="text-right">
@@ -103,7 +103,11 @@ export default function LeftSidebar() {
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center text-muted-foreground">
+                <div className="text-xs">Loading market data...</div>
+              </div>
+            )}
           </div>
         )}
       </Card>
