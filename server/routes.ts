@@ -47,12 +47,12 @@ export function registerRoutes(app: Express): void {
           details: errorText
         });
       }
+
+      const data = await response.json();
+      res.json(data);
     } catch (error) {
       console.error('Binance proxy error:', error);
       res.status(500).json({ error: 'Failed to fetch from Binance' });
     }
   });
 }
-
-      const data = await response.json();
-      res.json(data);

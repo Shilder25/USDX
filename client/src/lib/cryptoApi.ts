@@ -111,6 +111,10 @@ export async function getCryptoPrice(cryptoId: string = 'solana'): Promise<Crypt
     const data = await response.json();
     const cryptoData = data[cryptoId];
     
+    if (!cryptoData) {
+      throw new Error(`No price data found for ${cryptoId}`);
+    }
+    
     return {
       current_price: cryptoData.usd,
       price_change_24h: cryptoData.usd_24h_change || 0,
