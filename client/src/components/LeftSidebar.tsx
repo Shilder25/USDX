@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, TrendingUp, Zap, Settings, User, BarChart3 } from "lucide-react";
+import { Activity, TrendingUp, Zap, Settings, User, ChartBar as BarChart3 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getLiveMarketData } from "@/lib/cryptoApi";
 import cryptoMeme1 from "@assets/generated_images/Crypto_meme_placeholder_b0373b09.png";
