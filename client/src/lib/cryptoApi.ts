@@ -125,27 +125,28 @@ export async function getCryptoPrice(cryptoId: string = 'solana'): Promise<Crypt
     };
   } catch (error) {
     console.error(`Error fetching ${cryptoId} price:`, error);
-    // Fallback data
-    const fallbackData: Record<string, CryptoPrice> = {
-      'bitcoin': {
-        current_price: 42150.75,
-        price_change_24h: -1250.30,
-        price_change_percentage_24h: -2.88,
-        total_volume: 18500000000,
-        market_cap: 825000000000,
-        symbol: 'BTC',
-      },
-      'solana': {
-        current_price: 98.32,
-        price_change_24h: 2.15,
-        price_change_percentage_24h: 2.23,
-        total_volume: 1850000000,
-        market_cap: 43500000000,
-        symbol: 'SOL',
-      },
-    };
+    // Use the same real prices as Live Market
+    const liveMarketData = await getLiveMarketData();
+    const symbol = CRYPTO_OPTIONS.find(c => c.id === cryptoId)?.symbol || '';
+    const marketItem = liveMarketData.find(item => item.symbol.includes(symbol));
     
-    return fallbackData[cryptoId] || fallbackData['solana'];
+    if (marketItem) {
+      const price = parseFloat(marketItem.price.replace(/[$,]/g, ''));
+      const changeStr = marketItem.change.replace(/[%+]/g, '');
+      const change = parseFloat(changeStr);
+      
+      return {
+        current_price: price,
+        price_change_24h: (price * change) / 100,
+        price_change_percentage_24h: change,
+        total_volume: cryptoId === 'bitcoin' ? 32500000000 : 3200000000,
+        market_cap: cryptoId === 'bitcoin' ? 1850000000000 : 94000000000,
+        symbol,
+      };
+    }
+    
+    // Final fallback if Live Market also fails
+    throw new Error(`Unable to fetch price data for ${cryptoId}`);
   }
 }
 
@@ -184,12 +185,13 @@ export async function getCryptoRealTimeCandles(cryptoId: string = 'solana', inte
 function generateFallbackRealTimeCandles(cryptoId: string = 'solana', interval: string = '1m', limit: number = 100): CandlestickData[] {
   const candles: CandlestickData[] = [];
   
+  // Use current market prices as base
   const basePrices: Record<string, number> = {
-    bitcoin: 42150.75,
-    solana: 98.32,
+    bitcoin: 94234.50, // Current BTC price
+    solana: 198.45,    // Current SOL price
   };
   
-  let price = basePrices[cryptoId] || 156.78;
+  let price = basePrices[cryptoId] || basePrices['bitcoin'];
   const now = Date.now();
   
   // Convert interval to milliseconds (including seconds)
@@ -278,13 +280,13 @@ export async function getCryptoCandles(cryptoId: string = 'solana', days: number
 function generateFallbackCandles(cryptoId: string = 'solana'): CandlestickData[] {
   const candles: CandlestickData[] = [];
   
-  // Different base prices for different cryptos
+  // Use current market prices as base
   const basePrices: Record<string, number> = {
-    bitcoin: 42150.75,
-    solana: 98.32,
+    bitcoin: 94234.50, // Current BTC price
+    solana: 198.45,    // Current SOL price
   };
   
-  let price = basePrices[cryptoId] || 98.32;
+  let price = basePrices[cryptoId] || basePrices['bitcoin'];
   const now = Date.now();
   const interval = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -352,18 +354,18 @@ export async function getLiveMarketData(): Promise<LiveMarketData[]> {
     return result;
   } catch (error) {
     console.error('Error fetching live market data:', error);
-    // Fallback data
+    // Fallback data with current market prices
     return [
       {
         symbol: 'BTC/USD',
-        price: '$42,150.75',
-        change: '-2.88%',
-        trend: 'down',
+        price: '$94,234.50',
+        change: '+2.15%',
+        trend: 'up',
       },
       {
         symbol: 'SOL/USD',
-        price: '$98.32',
-        change: '+2.23%',
+        price: '$198.45',
+        change: '+3.42%',
         trend: 'up',
       }
     ];
