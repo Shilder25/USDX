@@ -12,7 +12,7 @@ import {
 import { CandlestickController, CandlestickElement, OhlcController, OhlcElement } from 'chartjs-chart-financial';
 import 'chartjs-adapter-date-fns';
 import { getCryptoCandles, CRYPTO_OPTIONS, type CandlestickData } from '@/lib/cryptoApi';
-import { Loader2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Loader as Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
