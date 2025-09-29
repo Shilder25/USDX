@@ -12,35 +12,26 @@ export function registerRoutes(app: Express): void {
       const url = `https://api.coingecko.com/api/v3/${path}${queryString ? `?${queryString}` : ''}`;
       
       const response = await fetch(url);
-      const responseText = await response.text();
-      
-      // Check Content-Type header
-      const contentType = response.headers.get('content-type');
       
       if (!response.ok) {
-        console.error(`CoinGecko API error (${response.status}):`, responseText);
+        const errorText = await response.text();
+        console.error(`CoinGecko API error (${response.status}):`, errorText);
         return res.status(response.status || 500).json({ 
           error: `CoinGecko API error: ${response.status} ${response.statusText}`,
-          details: responseText
+          details: errorText
         });
       }
       
-      // Try to parse as JSON
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          const data = JSON.parse(responseText);
-          res.json(data);
-        } catch (parseError) {
-          console.error('Failed to parse CoinGecko JSON response:', parseError);
-          return res.status(500).json({ 
-            error: 'Failed to parse JSON response from CoinGecko',
-            details: responseText
-          });
-        }
-      } else {
-        console.error(`CoinGecko API returned non-JSON content (${response.status}):`, contentType, responseText);
-        return res.status(response.status || 500).json({ 
-          error: `CoinGecko API returned non-JSON content: ${contentType}`,
+      // Try to parse as JSON directly
+      try {
+        const data = await response.json();
+        res.json(data);
+      } catch (parseError) {
+        // If JSON parsing fails, read as text and return error
+        const responseText = await response.text();
+        console.error('Failed to parse CoinGecko JSON response:', parseError);
+        return res.status(500).json({ 
+          error: 'Failed to parse JSON response from CoinGecko',
           details: responseText
         });
       }
@@ -58,35 +49,26 @@ export function registerRoutes(app: Express): void {
       const url = `https://api.binance.com/api/v3/${path}${queryString ? `?${queryString}` : ''}`;
       
       const response = await fetch(url);
-      const responseText = await response.text();
-      
-      // Check Content-Type header
-      const contentType = response.headers.get('content-type');
       
       if (!response.ok) {
-        console.error(`Binance API error (${response.status}):`, responseText);
+        const errorText = await response.text();
+        console.error(`Binance API error (${response.status}):`, errorText);
         return res.status(response.status || 500).json({ 
           error: `Binance API error: ${response.status} ${response.statusText}`,
-          details: responseText
+          details: errorText
         });
       }
       
-      // Try to parse as JSON
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          const data = JSON.parse(responseText);
-          res.json(data);
-        } catch (parseError) {
-          console.error('Failed to parse Binance JSON response:', parseError);
-          return res.status(500).json({ 
-            error: 'Failed to parse JSON response from Binance',
-            details: responseText
-          });
-        }
-      } else {
-        console.error(`Binance API returned non-JSON content (${response.status}):`, contentType, responseText);
-        return res.status(response.status || 500).json({ 
-          error: `Binance API returned non-JSON content: ${contentType}`,
+      // Try to parse as JSON directly
+      try {
+        const data = await response.json();
+        res.json(data);
+      } catch (parseError) {
+        // If JSON parsing fails, read as text and return error
+        const responseText = await response.text();
+        console.error('Failed to parse Binance JSON response:', parseError);
+        return res.status(500).json({ 
+          error: 'Failed to parse JSON response from Binance',
           details: responseText
         });
       }
